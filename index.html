@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Floating Glass Browser</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: transparent;
+      overflow: hidden;
+    }
+
+    .browser-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+
+    .title-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(20px);
+      -webkit-app-region: drag;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      gap: 10px;
+    }
+
+    .url-container {
+      display: flex;
+      flex: 1;
+      gap: 8px;
+    }
+
+    #url-input {
+      flex: 1;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.12);
+      color: white;
+      outline: none;
+      font-size: 14px;
+      -webkit-app-region: no-drag;
+      transition: all 0.3s ease;
+    }
+
+    #url-input:focus {
+      background: rgba(255,255,255,0.25);
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
+    }
+
+    #go-button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.12);
+      color: white;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      -webkit-app-region: no-drag;
+    }
+
+    #go-button:hover {
+      background: rgba(255,255,255,0.3);
+      transform: translateY(-1px);
+    }
+
+    .window-controls {
+      display: flex;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    .control-btn {
+      width: 14px;
+      height: 14px;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .control-btn:hover {
+      transform: scale(1.15);
+    }
+
+    .min-btn { background: #fbc531; }
+    .max-btn { background: #4cd137; }
+    .close-btn { background: #e84118; }
+
+    .webview-container {
+      flex: 1;
+      margin: 10px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.05);
+    }
+
+    webview {
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      background: transparent;
+    }
+
+    .loading {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="browser-container">
+    <div class="title-bar">
+      <div class="url-container">
+        <input type="text" id="url-input" placeholder="Enter URL (e.g., https://example.com)" value="https://example.com">
+        <button id="go-button">Go</button>
+      </div>
+      <div class="window-controls">
+        <button class="control-btn min-btn" id="min-btn"></button>
+        <button class="control-btn max-btn" id="max-btn"></button>
+        <button class="control-btn close-btn" id="close-btn"></button>
+      </div>
+    </div>
+
+    <div class="webview-container">
+      <webview id="webview" src="https://example.com" disablewebsecurity></webview>
+    </div>
+
+    <div class="loading" id="loading">Loading...</div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    // Window controls
+    document.getElementById('min-btn').addEventListener('click', () => ipcRenderer.send('minimize-window'));
+    document.getElementById('max-btn').addEventListener('click', () => ipcRenderer.send('maximize-window'));
+    document.getElementById('close-btn').addEventListener('click', () => ipcRenderer.send('close-window'));
+
+    const webview = document.getElementById('webview');
+    const urlInput = document.getElementById('url-input');
+    const goButton = document.getElementById('go-button');
+    const loading = document.getElementById('loading');
+
+    function navigate() {
+      let url = urlInput.value.trim();
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'http://' + url;
+      }
+      webview.src = url;
+    }
+
+    goButton.addEventListener('click', navigate);
+    urlInput.addEventListener('keypress', e => { if (e.key === 'Enter') navigate(); });
+
+    webview.addEventListener('dom-ready', () => {
+      webview.clearStorageData(); // optional: clear IndexedDB / cache to reduce warnings
+    });
+
+    webview.addEventListener('did-navigate', event => urlInput.value = event.url);
+    webview.addEventListener('did-start-loading', () => loading.style.display = 'block');
+    webview.addEventListener('did-stop-loading', () => loading.style.display = 'none');
+    webview.addEventListener('did-fail-load', () => {
+      loading.style.display = 'none';
+      loading.textContent = 'Failed to load page';
+    });
+  </script>
+</body>
+</html>

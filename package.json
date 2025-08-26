@@ -1,0 +1,32 @@
+{
+    "name": "trans",
+    "version": "1.0.0",
+    "description": "A small floating browser with transparency",
+    "main": "main.js",
+    "scripts": {
+      "start": "electron .",
+      "build": "electron-builder",
+      "build-mac": "electron-builder --mac"
+    },
+    "devDependencies": {
+      "electron": "^27.0.0",
+      "electron-builder": "^24.6.4"
+    },
+    "build": {
+      "appId": "com.yourcompany.floating-browser",
+      "productName": "Floating Browser",
+      "directories": {
+        "output": "dist"
+      },
+      "mac": {
+        "category": "public.app-category.productivity",
+        "target": "dmg"
+      },
+      "dmg": {
+        "window": {
+          "width": 500,
+          "height": 300
+        }
+      }
+    }
+  }
